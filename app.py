@@ -79,7 +79,7 @@ def stream_assistant_response(user_input, config, tool_status):
         tool_status.update(label="Response complete", state="complete")
 
 # Display the main application title
-st.title("Agentic Chatbot with LangGraph")
+st.title("🤖 Agentic Chatbot with LangGraph")
 
 # create message_history when the app runs for the first time
 if "message_history" not in st.session_state:

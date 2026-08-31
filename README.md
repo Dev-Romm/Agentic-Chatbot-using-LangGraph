@@ -4,71 +4,58 @@ A comprehensive chatbot framework built with **LangGraph** and **Azure OpenAI**,
 
 ## 📋 Project Overview
 
-This project demonstrates different chatbot architectures using LangGraph's state management and workflow capabilities:
+A unified, intelligent chatbot built with **LangGraph** and **Azure OpenAI**, featuring:
 
-- **Basic Chatbot** - Simple conversational AI with memory
-- **Database Chatbot** - Persistent conversation history with SQLite
-- **RAG Chatbot** - Retrieval-Augmented Generation for document-based Q&A
-- **Tools Chatbot** - Agentic capabilities with external tools (search, calculator, weather)
+- **Multi-tool Integration** - Web search, weather, calculator, and document Q&A
+- **Retrieval-Augmented Generation (RAG)** - Query uploaded PDF documents
+- **Persistent Memory** - SQLite-based conversation history with thread support
+- **Agentic Capabilities** - LLM dynamically selects and uses appropriate tools
+- **Interactive UI** - Streamlit web interface
 
-All implementations use **Streamlit** for an interactive web UI and **Azure OpenAI** as the LLM backbone.
+The chatbot uses **Azure OpenAI GPT** as the LLM backbone and **LangGraph** for intelligent workflow orchestration.
 
 ---
 
 ## 🏗️ Project Structure
 
 ```
-agentic_chatbot_backend.py          # Basic chatbot implementation
-agentic_chatbot_db_backend.py       # Database-persistent chatbot backend
-agentic_chatbot_rag_backend.py      # RAG-enabled chatbot backend
-agentic_chatbot_tools_backend.py    # Tools-enabled agentic backend
-
-app.py                              # Basic chatbot Streamlit UI
-app_db.py                           # Database chatbot Streamlit UI
-app_rag.py                          # RAG chatbot Streamlit UI
-app_tools.py                        # Tools chatbot Streamlit UI
-
-app_thread.py                       # Thread management utilities
-test.py                             # Testing utilities
-
-requirements.txt                    # Project dependencies
-chatbot.db                          # SQLite database (generated)
-
-faiss_db/                           # FAISS vector store index
-notebooks/
-  ├── rag_demo.ipynb               # RAG implementation demonstration
-  └── chatbot_workflow.ipynb       # General chatbot workflow notebook
+.
+├── app.py                          # Streamlit UI application
+├── backend.py                      # Core chatbot backend logic
+├── requirements.txt                # Project dependencies
+├── Dockerfile                      # Docker container configuration
+├── .dockerignore                   # Files excluded from Docker build
+├── .gitignore                      # Files excluded from version control
+├── README.md                       # Project documentation
+├── .env                            # Environment variables (not in version control)
+└── .github/                        # GitHub configuration and workflows
 ```
 
 ---
 
 ## 🚀 Features
 
-### 1. **Basic Chatbot** (`app.py`)
-- Simple conversational interface
-- In-memory message history
-- Powered by Azure OpenAI GPT-4
-- Thread-based conversation state management
+### **Multi-Tool Intelligence**
+The chatbot dynamically selects the best tool(s) for each query:
+- **🔍 Web Search** (Tavily API) - Current events, recommendations, real-world information
+- **📄 RAG (Document Q&A)** - Query uploaded PDF documents with semantic search (FAISS)
+- **🧮 Calculator** - Mathematical expressions and computations
+- **🌤️ Weather** (Weatherstack API) - Real-time weather for any location
 
-### 2. **Database Chatbot** (`app_db.py`)
-- Persistent conversation storage with SQLite
-- Load and resume previous conversations
-- Multiple independent chat threads
-- Conversation history management
+### **Smart Routing**
+- LLM automatically decides which tool(s) to use for each query
+- Forces live search for time-sensitive queries ("latest", "current", "today")
+- Falls back to direct response when no tool is needed
 
-### 3. **RAG Chatbot** (`app_rag.py`)
-- Document ingestion and indexing (PDF support)
-- FAISS vector store for semantic search
-- Context-aware responses based on uploaded documents
-- Combines retrieval with generation
+### **Persistent Memory**
+- SQLite database stores complete conversation history
+- Resume conversations across sessions using thread IDs
+- Thread-safe concurrent access
 
-### 4. **Tools Chatbot** (`app_tools.py`)
-- Multi-tool integration:
-  - **Web Search** (Tavily API)
-  - **Calculator** (Math expressions)
-  - **Weather API** (Real-time weather data)
-- Agentic decision-making
-- Tool-use patterns with LangGraph
+### **Document Analysis**
+- Ingest PDF documents into FAISS vector store
+- Semantic search for relevant passages
+- Source and page references in responses
 
 ---
 
@@ -117,27 +104,26 @@ notebooks/
 
 ## 🎯 Usage
 
-### Run Basic Chatbot
+### Run the Chatbot
 ```bash
 streamlit run app.py
 ```
 
-### Run Database Chatbot (with history)
-```bash
-streamlit run app_db.py
-```
+The application opens in your browser at `http://localhost:8501`
 
-### Run RAG Chatbot (document QA)
-```bash
-streamlit run app_rag.py
-```
+### Load Documents for RAG
+Within the Streamlit UI, use the file uploader to add PDF documents. The chatbot will:
+1. Extract text from the PDF
+2. Split into semantic chunks
+3. Create vector embeddings
+4. Store in FAISS for semantic search
 
-### Run Tools Chatbot (agentic with tools)
-```bash
-streamlit run app_tools.py
-```
-
-Each application opens in your browser at `http://localhost:8501`
+### Example Queries
+- **Direct question**: "What is machine learning?"
+- **Search-based**: "What are the latest developments in AI?"
+- **Calculation**: "What is 25% of 1200?"
+- **Weather**: "What's the weather in London?"
+- **Document Q&A**: "Summarize the findings from the uploaded PDF"
 
 ---
 
@@ -158,72 +144,122 @@ Each application opens in your browser at `http://localhost:8501`
 
 ## 📚 Core Components
 
-### ChatState (Shared Across All Implementations)
+### ChatState
 ```python
 class ChatState(TypedDict):
     messages: Annotated[list[BaseMessage], add_messages]
 ```
-Manages conversation state with automatic message aggregation.
+Manages conversation state using LangGraph's message aggregation.
 
-### Checkpointing Options
-- **Memory**: `MemorySaver()` - In-memory persistence (basic chatbot)
-- **SQLite**: `SqliteSaver(conn)` - Persistent database storage (DB & Tools chatbots)
+### Persistence Layer
+- **SQLite**: `SqliteSaver(conn)` - Persistent conversation storage
+- **Thread IDs**: Unique identifiers for resumable conversations
+- **Database**: `chatbot.db` (auto-created)
 
-### LangGraph Workflow Pattern
+### Workflow Architecture
 ```
-START → Chat/Agent Node → Tool Node (if applicable) → END
+START → chat_node (LLM decides) → tools (if needed) → chat_node → END
+         ↓                                                ↑
+         └────────────────────────────────────────────────┘
+         Conditional routing based on tool requirements
 ```
+
+### Available Tools
+1. **search_tool** - Tavily web search
+2. **get_current_weather** - Weatherstack API
+3. **calculator** - Math evaluation
+4. **rag_tool** - FAISS vector store retrieval
 
 ---
 
 ## 🧠 RAG (Retrieval-Augmented Generation)
 
-### Document Ingestion
-```python
-def ingest_rag_document(file_path):
-    # Loads PDF → Splits into chunks → Creates embeddings → Stores in FAISS
-```
+### Document Processing Pipeline
+1. **Load** - Extract text from PDF using PyPDFLoader
+2. **Split** - Chunk into semantic pieces (1000 chars, 200 char overlap)
+3. **Embed** - Create vector embeddings using Azure OpenAI Embeddings
+4. **Store** - Save to FAISS vector database (`faiss_db/`)
 
 ### Retrieval Process
-1. User query is embedded
-2. Semantic similarity search in FAISS
-3. Top documents retrieved as context
-4. LLM generates response with context
+1. User query is embedded using same model
+2. Semantic similarity search (top-4 chunks)
+3. Retrieved passages passed as context to LLM
+4. LLM generates response with source references
 
----
-
-## 🛠️ Tools Integration (Agentic Chatbot)
-
-The tools chatbot implements a ReAct-style agent pattern:
-
-**Available Tools:**
-- `search_tool`: Web search via Tavily
-- `calculator`: Mathematical expression evaluation
-- `get_current_weather`: Real-time weather data
-
-**Agent Flow:**
-1. LLM receives user query
-2. Model decides which tool(s) to use
-3. Tools execute and return results
-4. LLM generates final response with tool context
-
----
-
-## 📖 Development & Testing
-
-### Run Tests
-```bash
-python test.py
+### Configuration
+```python
+# In backend.py
+RecursiveCharacterTextSplitter(
+    chunk_size=1000,      # Adjust for doc complexity
+    chunk_overlap=200     # Adjust for context continuity
+)
 ```
 
-### Jupyter Notebooks
-- `notebooks/chatbot_workflow.ipynb` - Workflow demonstrations
-- `notebooks/rag_demo.ipynb` - RAG implementation details
+---
 
-### Thread Management
-Use `app_thread.py` for manual thread operations:
+## 🛠️ Tool Integration & Agent Flow
+
+The chatbot implements a ReAct-style agent pattern with intelligent tool selection:
+
+### Tool Decision Logic
+- **Forced Search**: Triggers for time-sensitive queries ("latest", "current", "upcoming")
+- **Optional Tools**: LLM chooses best tool(s) for other queries
+- **Tool Composition**: Multiple tools can be used in a single response
+
+### Execution Flow
+```
+User Query
+    ↓
+LLM with Tools (or Required Tools)
+    ↓
+Tool Call? (conditional routing)
+    ├─ Yes → Execute tool(s) → Return results
+    │        ↓
+    │    LLM generates response with context
+    └─ No → LLM responds directly
+    ↓
+Return response to user
+```
+
+### Tool Configuration
+- **Search**: Tavily API (max 5 results, advanced depth)
+- **Weather**: Weatherstack API (real-time conditions)
+- **Calculator**: Safe eval with math library
+- **RAG**: FAISS with semantic similarity
+
+---
+
+## 📖 Development & Customization
+
+### Extending the Backend
 ```python
-from app_thread import generate_thread_id, load_conversation
+# Add new tools in backend.py
+@tool
+def my_tool(param: str) -> str:
+    """Tool description and usage."""
+    # Implementation
+    return result
+
+# Add to tools list
+tools = [search_tool, get_current_weather, calculator, rag_tool, my_tool]
+```
+
+### Customizing LLM Behavior
+Edit the `system_message` in `chat_node()` to:
+- Change tool usage guidelines
+- Adjust response tone and style
+- Add domain-specific instructions
+
+### Vector Store Management
+```python
+from backend import ingest_rag_document, get_retriever
+
+# Ingest a new document
+ingest_rag_document("path/to/document.pdf")
+
+# Retrieve documents programmatically
+retriever = get_retriever()
+docs = retriever.invoke("search query")
 ```
 
 ---
@@ -240,20 +276,45 @@ from app_thread import generate_thread_id, load_conversation
 ## 📊 Configuration
 
 ### Azure OpenAI Deployments
-Update the deployment names in backend files if using different models:
+Update the deployment names in `backend.py`:
 ```python
 llm = AzureChatOpenAI(
-    deployment_name="gpt-41-mini",  # Your deployment name
-    openai_api_version="2024-02-15-preview"
+    deployment_name="gpt-5-mini",  # Your deployment name
+    openai_api_version="2025-04-01-preview"
+)
+
+embeddings = AzureOpenAIEmbeddings(
+    model="text-embedding-3-small",
+    azure_deployment="text-embedding-3-small",
+    api_version="2023-05-15"
 )
 ```
 
+### Required Environment Variables
+Add these to your `.env` file:
+```env
+AZURE_OPENAI_API_KEY=<your-key>
+AZURE_OPENAI_ENDPOINT=<your-endpoint>
+TAVILY_API_KEY=<your-tavily-key>
+WEATHERSTACK_API_KEY=<your-weatherstack-key>
+```
+
 ### RAG Settings
-Customize chunking in `agentic_chatbot_rag_backend.py`:
+Customize document processing in `backend.py`:
 ```python
-splitter = RecursiveCharacterTextSplitter(
-    chunk_size=1000,        # Adjust chunk size
-    chunk_overlap=200       # Adjust overlap
+RecursiveCharacterTextSplitter(
+    chunk_size=1000,        # Adjust for document type
+    chunk_overlap=200       # Adjust for semantic continuity
+)
+```
+
+### Tool Configuration
+Modify tool parameters in `backend.py`:
+```python
+search_tool = TavilySearch(
+    max_results=5,          # Number of search results
+    topic="general",        # Topic focus
+    search_depth="advanced" # Search depth level
 )
 ```
 
