@@ -110,7 +110,7 @@ jobs:
           AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
           AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
           TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
-          OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
+          OPENWEATHER_API_KEY: ${{ secrets.WEATHERSTACK_API_KEY }}
           LANGSMITH_TRACING: ${{ secrets.LANGSMITH_TRACING }}
           LANGSMITH_ENDPOINT: ${{ secrets.LANGSMITH_ENDPOINT }}
           LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
@@ -132,7 +132,7 @@ jobs:
           fi
 
           if [ -z "$OPENWEATHER_API_KEY" ]; then
-            echo "OPENWEATHER_API_KEY secret is missing."
+            echo "WEATHERSTACK_API_KEY secret is missing."
             exit 1
           fi
 
@@ -175,7 +175,7 @@ jobs:
           AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
           AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
           TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
-          OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
+          OPENWEATHER_API_KEY: ${{ secrets.WEATHERSTACK_API_KEY }}
 
           LANGSMITH_TRACING: ${{ secrets.LANGSMITH_TRACING }}
           LANGSMITH_ENDPOINT: ${{ secrets.LANGSMITH_ENDPOINT }}
@@ -190,7 +190,7 @@ jobs:
             -e AZURE_OPENAI_API_KEY \
             -e AZURE_OPENAI_ENDPOINT \
             -e TAVILY_API_KEY \
-            -e OPENWEATHER_API_KEY \
+            -e WEATHERSTACK_API_KEY \
             -e LANGSMITH_TRACING \
             -e LANGSMITH_ENDPOINT \
             -e LANGSMITH_API_KEY \
